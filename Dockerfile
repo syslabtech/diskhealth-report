@@ -52,6 +52,11 @@ COPY --from=build /app/config /app/config
 COPY --from=build /app/deviceTBW.json /app
 COPY --from=build /app/outputdiskdata.txt /app
 
+# Add labels for metadata
+LABEL org.opencontainers.image.title="Disk Health Analyzer Tool" \
+      org.opencontainers.image.description="A lightweight Go application for managing disk operations." \
+      org.opencontainers.image.authors="syslabtech"
+
 # Expose any necessary ports (if needed, e.g., EXPOSE 8080)
 # EXPOSE 8080
 
