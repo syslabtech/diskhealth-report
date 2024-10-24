@@ -1,6 +1,6 @@
 {
     "KafkaBatchSize" : 1,
-    "WaitBetweenBatches_MiliSecond" : 0,
+    "WaitBetweenBatches_MiliSecond" : 5,
     "MaxInActiveTime_Minute" :3,
     "InitialDelayInSeconds" : 60,
     "LogLevel":"debug",
