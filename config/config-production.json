@@ -8,10 +8,10 @@
         "Host": "192.168.26.10:9092",
         "AutoCommit": false,
         "Topics": {
-            "SourceTopic": "go_training_hardik",
-            "MetricsTopic" : "dr_metrics"
+            "SourceTopic": "",
+            "MetricsTopic" : ""
         },
-        "ConsumerGroup" : "dr_cbtocb_metrics_exporter",
+        "ConsumerGroup" : "",
         "TerminationSignalWatchInterval_Second": "3",
         "Encryption":{
             "Enable" : false,
