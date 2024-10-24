@@ -1,19 +1,25 @@
-# Use a valid Go version and base image
+# Stage 1: Build the Go binary
 FROM golang:1.23-bookworm AS build
 
 # Set the working directory inside the container
 WORKDIR /app
 
-# Copy the rest of the application source code
-COPY . .
-
-RUN ls -ltr
+# Copy go.mod and go.sum to download dependencies first
+COPY go.mod go.sum ./
 
 # Download dependencies
 RUN go mod download && go mod verify
 
-# Install xz-utils for extracting .tar.xz and curl to download the UPX binary
-RUN apt-get update && apt-get install -y xz-utils curl librdkafka-dev tzdata
+# Copy the rest of the application source code
+COPY . .
+
+# Install xz-utils for extracting .tar.xz, curl for downloading UPX, and other dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    xz-utils \
+    curl \
+    librdkafka-dev \
+    tzdata \
+    && rm -rf /var/lib/apt/lists/*
 
 # Download UPX manually and install it
 RUN curl -L https://github.com/upx/upx/releases/download/v4.0.2/upx-4.0.2-amd64_linux.tar.xz -o upx.tar.xz \
@@ -27,22 +33,27 @@ RUN CGO_ENABLED=1 GOARCH=amd64 GOOS=linux go build -o disktool -a -ldflags="-s -
 # Compress the binary using UPX
 RUN upx --ultra-brute -qq disktool && upx -t disktool 
 
-# Stage 2: Use a minimal image for the final production build
-# FROM gcr.io/distroless/base           26.3 MB
-FROM alpine:latest
 
-RUN apk add --no-cache bash tzdata curl
+# Stage 2: Create a lightweight final image using Alpine
+FROM debian:bookworm-slim
 
-# Set the working directory
+# Set the working directory inside the container
 WORKDIR /app
 
-# Copy the compressed binary and configuration files from the build stage
-COPY --from=build /app/disktool /app
+# Install necessary runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    librdkafka-dev \
+    tzdata \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy the compressed binary from the build stage
+COPY --from=build /app/disktool /app/disktool
 COPY --from=build /app/config /app/config
 COPY --from=build /app/deviceTBW.json /app
 COPY --from=build /app/outputdiskdata.txt /app
 
-RUN ls -ltr
+# Expose any necessary ports (if needed, e.g., EXPOSE 8080)
+# EXPOSE 8080
 
-# Run the disktool binary directly
+# Command to run the application
 CMD ["/app/disktool"]
