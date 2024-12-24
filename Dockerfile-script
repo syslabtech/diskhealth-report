@@ -1,0 +1,20 @@
+# Script for dockerfile
+
+# Start from the Ubuntu base image
+FROM ubuntu:latest
+
+# Set the timezone to UTC
+ENV TZ=UTC
+
+# Install necessary packages
+RUN apt-get update && apt-get install -y \
+    cron \
+    smartmontools \
+    && apt-get clean
+
+# Add your shell script to the image
+COPY disktool.sh /usr/local/bin/disktool.sh
+RUN chmod +x /usr/local/bin/disktool.sh
+
+# Run the cron service and tail the cron log
+# CMD ["bash", "-c", "touch /var/log/cron.log && cron && tail -f /var/log/cron.log"]
