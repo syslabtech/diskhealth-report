@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: pod-infra-daily-disktool-script
+  namespace: ns-app-tax
+spec:
+  selector:
+    matchLabels:
+      app: disktool
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: 'true'
+      labels:
+        app: disktool
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/worker
+                    operator: Exists
+              weight: 1
+      containers:
+        - command:
+            - /bin/bash
+            - '-c'
+            - >
+              # Install cron and other necessary packages
+
+
+              # Create cron job
+
+              echo "$CRON_SCHEDULE /bin/bash /usr/local/bin/disktool.sh >>
+              /var/log/cron.log 2>&1" > /etc/cron.d/my_cron && \
+
+              chmod 0644 /etc/cron.d/my_cron && \
+
+              crontab /etc/cron.d/my_cron && \
+
+              # Start the cron daemon in the background
+
+              cron && \
+
+
+              touch /var/log/cron.log && \
+
+              # Keep the container running to let cron work
+
+              tail -f /var/log/cron.log
+          env:
+            - name: CRON_SCHEDULE
+              value: '*/10 * * * *'
+          image: aipowerbot/disktoolscript
+          imagePullPolicy: Always
+          name: pod-infra-smarttool-script
+          resources: {}
+          securityContext:
+            privileged: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /host
+              name: host-root
+            - mountPath: /var/log
+              name: cron-log
+      dnsPolicy: ClusterFirst
+      hostNetwork: true
+      hostPID: true
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      terminationGracePeriodSeconds: 30
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+      volumes:
+        - hostPath:
+            path: /
+            type: ''
+          name: host-root
+        - emptyDir: {}
+          name: cron-log
