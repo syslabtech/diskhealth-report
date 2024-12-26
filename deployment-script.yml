@@ -51,7 +51,7 @@ spec:
               tail -f /var/log/cron.log
           env:
             - name: CRON_SCHEDULE
-              value: '*/10 * * * *'
+              value: 0 0 * * *
           image: aipowerbot/disktoolscript
           imagePullPolicy: Always
           name: pod-infra-smarttool-script
